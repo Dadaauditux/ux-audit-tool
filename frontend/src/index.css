@@ -1,0 +1,91 @@
+/* ===== Variables de thème Carbon ===== */
+:root {
+  --cds-interactive: #0f62fe;
+  --cds-interactive-hover: #0353e9;
+  --cds-interactive-active: #002d9c;
+  --cds-disabled-bg: #f4f4f4;
+  --cds-disabled-text: #a8a8a8;
+  --cds-focus: #0f62fe;
+  --cds-text: #161616;
+  --cds-bg: #ffffff;
+  --cds-border: #8d8d8d;
+}
+
+/* ===== Reset & base ===== */
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", Arial, sans-serif;
+  background-color: var(--cds-bg);
+  color: var(--cds-text);
+  padding: 0rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ===== Champ upload ===== */
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.upload-label {
+  font-weight: 600;
+}
+
+.upload-input {
+  display: inline-block;
+  padding: 0.5rem;
+  border: 1px solid var(--cds-border);
+  border-radius: 4px;
+  background-color: var(--cds-bg);
+  cursor: pointer;
+}
+
+.upload-input:focus {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
+.upload-input:disabled {
+  background-color: var(--cds-disabled-bg);
+  color: var(--cds-disabled-text);
+  cursor: not-allowed;
+}
+
+/* ===== Bouton "Analyser" ===== */
+.btn-primary {
+  background-color: var(--cds-interactive);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  padding: 0.625rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: var(--cds-interactive-hover);
+}
+
+.btn-primary:active {
+  background-color: var(--cds-interactive-active);
+}
+
+.btn-primary:focus {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
+.btn-primary:disabled {
+  background-color: var(--cds-disabled-bg);
+  color: var(--cds-disabled-text);
+  cursor: not-allowed;
+}
+/* Lissage & police */
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }

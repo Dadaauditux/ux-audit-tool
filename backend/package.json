@@ -1,0 +1,18 @@
+{
+  "name": "ux-audit-backend",
+  "version": "1.0.0",
+  "description": "Backend pour outil d'audit UX",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "color": "^4.2.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.0",
+    "sharp": "^0.32.1",
+    "tesseract.js": "^4.1.4"
+  }
+}

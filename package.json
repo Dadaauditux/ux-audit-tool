@@ -1,0 +1,13 @@
+{
+  "name": "ux-audit-tool",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "npx kill-port 3000 5000 && concurrently \"npm start --prefix backend\" \"npm start --prefix frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0",
+    "kill-port": "^2.0.1"
+  }
+}
