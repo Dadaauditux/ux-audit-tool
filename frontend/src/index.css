@@ -89,3 +89,12 @@ h1 {
 }
 /* Lissage & police */
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* Empêche les débordements horizontaux */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Petit gap visuel sous la légende */
+.legend-panel { margin-top: 12px; }

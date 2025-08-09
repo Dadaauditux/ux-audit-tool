@@ -1,0 +1,19 @@
+/* frontend/src/global.css */
+
+/* Reset box-sizing pour éviter tout débordement */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Enlève les marges par défaut */
+body, h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+}
+
+/* Améliore le rendu sur mobile */
+img, video, canvas {
+  max-width: 100%;
+  height: auto;
+}

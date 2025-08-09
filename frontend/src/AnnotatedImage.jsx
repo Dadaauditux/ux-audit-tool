@@ -1,104 +1,155 @@
-// AnnotatedImage.jsx
-import React from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Stage, Layer, Image as KonvaImage, Rect, Text, Group } from "react-konva";
 import useImage from "use-image";
 
-// Palette de couleurs
+/* ===== Constantes & helpers (hors composant => pas de warning hooks) ===== */
 const COLORS = {
-  text: { stroke: "orange", fill: "rgba(255,165,0,0.15)", label: "orange" },
-  contrast: { stroke: "red", fill: "rgba(255,0,0,0.15)", label: "red" },
-  button: { stroke: "blue", fill: "rgba(0,0,255,0.15)", label: "blue" },
-  "heading-hierarchy": { stroke: "purple", fill: "rgba(128,0,128,0.15)", label: "purple" },
-  spacing: { stroke: "green", fill: "rgba(0,128,0,0.15)", label: "green" },
-  alignment: { stroke: "deeppink", fill: "rgba(255,192,203,0.15)", label: "deeppink" }
+  text: "orange",
+  contrast: "red",
+  button: "blue",
+  "heading-hierarchy": "purple",
+  spacing: "green",
+  alignment: "pink",
 };
 
-export default function AnnotatedImage({ src, issues, containerWidth }) {
+function computeStageSize(image, availableWidth) {
+  if (!image || !availableWidth) {
+    return { width: 0, height: 0, scale: 1 };
+  }
+  // pas de sur-échantillonnage au-delà de 100 %
+  const scale = Math.min(1, availableWidth / image.width);
+  return {
+    width: Math.round(image.width * scale),
+    height: Math.round(image.height * scale),
+    scale,
+  };
+}
+
+/**
+ * AnnotatedImage
+ * - S'adapte à la largeur disponible (mobile/desktop)
+ * - Conserve les coordonnées d'origine (on scale la Stage)
+ * - Si `containerWidth` est passé on l'utilise, sinon on observe la div conteneur
+ */
+export default function AnnotatedImage({ src, issues = [], containerWidth }) {
   const [image] = useImage(src);
-  if (!image) return <p>Chargement de l'image...</p>;
+  const containerRef = useRef(null);
 
-  // Échelle responsive
-  const scale = containerWidth ? Math.min(1, containerWidth / image.width) : 1;
+  const [stageSize, setStageSize] = useState({
+    width: 0,
+    height: 0,
+    scale: 1,
+  });
 
-  // Tableau des positions déjà utilisées pour éviter les chevauchements
-  const placedLabels = [];
+  // Si containerWidth est fourni par le parent, on l'applique
+  useEffect(() => {
+    if (!image) return;
+    if (containerWidth) {
+      setStageSize(computeStageSize(image, containerWidth));
+    }
+  }, [image, containerWidth]);
+
+  // Sinon, on observe la largeur réelle du conteneur
+  useEffect(() => {
+    if (!image || containerWidth) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const compute = () => setStageSize(computeStageSize(image, el.clientWidth));
+    compute();
+
+    let ro;
+    if ("ResizeObserver" in window) {
+      ro = new ResizeObserver(compute);
+      ro.observe(el);
+    } else {
+      window.addEventListener("resize", compute);
+    }
+    return () => {
+      if (ro) ro.disconnect();
+      else window.removeEventListener("resize", compute);
+    };
+  }, [image, containerWidth]);
+
+  // Taille de police des étiquettes: stable visuellement même quand on scale
+  const labelFontSize = useMemo(() => {
+    const base = 12; // taille "logique"
+    return base / (stageSize.scale || 1);
+  }, [stageSize.scale]);
+
+  if (!image) {
+    return <p style={{ margin: "8px 0" }}>Chargement de l'image…</p>;
+  }
 
   return (
-    <Stage
-      width={image.width * scale}
-      height={image.height * scale}
-      scaleX={scale}
-      scaleY={scale}
+    <div
+      ref={containerRef}
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        borderRadius: 12,
+        background: "#fff",
+      }}
     >
-      <Layer>
-        {/* Image de fond */}
-        <KonvaImage image={image} />
+      <Stage
+        width={stageSize.width}
+        height={stageSize.height}
+        scaleX={stageSize.scale}
+        scaleY={stageSize.scale}
+      >
+        <Layer>
+          {/* L'image originale ; on ne change pas ses coordonnées, on scale la Stage */}
+          <KonvaImage image={image} />
 
-        {/* Dessin des zones + labels */}
-        {issues.map((issue, i) => {
-          const color = COLORS[issue.type] || COLORS.text;
-          const { x, y, w, h } = issue.boundingBox;
+          {/* Annotations */}
+          {issues.map((issue, i) => {
+            const { x = 0, y = 0, w = 0, h = 0 } = issue.boundingBox || {};
+            const color = COLORS[issue.type] || "black";
+            const strokeWidth =
+              issue.severity === "high" ? 3 : issue.severity === "medium" ? 2 : 1;
 
-          // Calcul position initiale du label
-          let labelX = x;
-          let labelY = y - 24 < 0 ? y + h + 4 : y - 24;
+            const message = issue.message || "Issue";
+            // largeur cartouche (coordonnées non-scalées)
+            const labelWidth = Math.max(message.length * 7 + 12, 64);
+            const labelHeight = 22;
+            const labelY = Math.max(y - (labelHeight + 2), 0);
 
-          // Évite chevauchement : on vérifie toutes les positions déjà placées
-          while (
-            placedLabels.some(
-              (pos) =>
-                Math.abs(pos.x - labelX) < 50 && // tolérance horizontale
-                Math.abs(pos.y - labelY) < 20    // tolérance verticale
-            )
-          ) {
-            labelY += 22; // décale vers le bas
-          }
-
-          // Enregistre cette position comme utilisée
-          placedLabels.push({ x: labelX, y: labelY });
-
-          return (
-            <Group key={i}>
-              {/* Rectangle semi-transparent */}
-              <Rect
-                x={x}
-                y={y}
-                width={w}
-                height={h}
-                stroke={color.stroke}
-                strokeWidth={2}
-                dash={[6, 4]}
-                cornerRadius={4}
-                fill={color.fill}
-              />
-
-              {/* Label façon “badge” */}
-              <Group>
+            return (
+              <Group key={i}>
+                {/* Cadre sur la zone */}
                 <Rect
-                  x={labelX}
-                  y={labelY}
-                  height={20}
-                  fill={color.label}
+                  x={x}
+                  y={y}
+                  width={w}
+                  height={h}
+                  stroke={color}
+                  strokeWidth={strokeWidth}
+                  dash={[4, 4]}
                   cornerRadius={4}
-                  shadowColor="rgba(0,0,0,0.2)"
-                  shadowBlur={2}
-                  shadowOffset={{ x: 1, y: 1 }}
-                  shadowOpacity={0.4}
-                  width={issue.message.length * 7 + 12} // largeur auto en fonction du texte
+                  listening={false}
                 />
-                <Text
-                  x={labelX + 6}
-                  y={labelY + 3}
-                  text={issue.message}
-                  fontSize={12}
-                  fontStyle="bold"
-                  fill="white"
-                />
+
+                {/* Étiquette (fond + texte) */}
+                <Group x={x} y={labelY} listening={false}>
+                  <Rect
+                    width={labelWidth}
+                    height={labelHeight}
+                    fill={color}
+                    opacity={0.9}
+                    cornerRadius={6}
+                  />
+                  <Text
+                    text={message}
+                    fontSize={labelFontSize}
+                    fill="#fff"
+                    padding={6}
+                  />
+                </Group>
               </Group>
-            </Group>
-          );
-        })}
-      </Layer>
-    </Stage>
+            );
+          })}
+        </Layer>
+      </Stage>
+    </div>
   );
 }
